@@ -1,56 +1,102 @@
-# Welcome to your Expo app 👋
+# EasyScan
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A simple mobile app built with React Native and Expo that scans QR codes and barcodes, and reads vehicle number plates from photos.
 
-## Get started
+## Features
 
-1. Install dependencies
+- **QR code and barcode scanner**
+  - Live camera scanning with a target box (only codes inside the box are accepted)
+  - Pinch to zoom
+  - Links (`http` / `https`) open automatically
+  - Scanned text can be selected and copied
+- **Number plate scanner**
+  - Upload a photo from your gallery
+  - Shows the plate number, state (Indian plates), country code, and vehicle type
+  - Shows "Not found" when nothing can be read
+  - Tries extra readings and fixes look-alike characters (like `O` and `0`) to help with blurry photos
+- **Splash screen** that opens the home screen after a few seconds
 
-   ```bash
-   npm install
-   ```
+## Tech Stack
 
-2. Start the app
+- React Native + Expo (Expo Router for navigation)
+- `expo-camera` for scanning
+- `expo-image-picker` and `expo-image-manipulator` for choosing and preparing photos
+- `react-native-gesture-handler` for pinch zoom
+- [Plate Recognizer](https://platerecognizer.com) API for reading plates
 
-   ```bash
-   npx expo start
-   ```
+## Getting Started
 
-In the output, you'll find options to open the app in a
+### 1. Requirements
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- Node.js (LTS version)
+- The **Expo Go** app on your phone, or an Android emulator / iOS simulator
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+### 2. Install
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 3. Add your API token
 
-### Other setup steps
+Create a file named `.env` in the project root (next to `package.json`):
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```
+EXPO_PUBLIC_PLATE_TOKEN=your_plate_recognizer_token
+```
 
-## Learn more
+- Get a token by signing up at [platerecognizer.com](https://platerecognizer.com).
+- No quotes, no spaces around `=`.
+- Do not upload this file to GitHub. Add `.env` to `.gitignore`.
 
-To learn more about developing your project with Expo, look at the following resources:
+### 4. Run
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+npx expo start 
+```
 
-## Join the community
+Then scan the QR code with Expo Go, or press `a` for Android / `i` for iOS.
 
-Join our community of developers creating universal apps.
+> Use `-c` whenever you create or change `.env`, so the new value is picked up.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+The camera scanner is best tested on a **real phone**. Emulators usually show a black or fake camera feed.
+
+## Project Structure
+
+```
+EasyScan/
+  app/
+    _layout.tsx        Navigation setup
+    index.tsx          Splash screen
+    home.tsx           Home screen
+    scanner.tsx        QR / barcode scanner
+    plate.tsx          Number plate scanner
+  utils/
+    plate.ts           Plate format check and state lookup
+    plateRecognizer.ts API call to Plate Recognizer
+  .env                 API token (not committed)
+  app.json             Expo configuration
+```
+
+## How It Works
+
+**Scanner:** the camera reads codes and reports where each code is on screen. The app only accepts a code if it is inside the target box, then shows the result or opens the link.
+
+**Plate scanner:** the chosen photo is resized and sent to the Plate Recognizer API. The API returns the plate text, country code, vehicle type, and alternative readings. For Indian plates, the first two letters (for example `UP`) are matched against a list of state codes to find the state.
+
+## Notes and Limits
+
+- State lookup works for **Indian plates only**. Other countries show the plate and country code.
+- The state shows where the vehicle was **registered**, not where it is now.
+- Very blurry or low-resolution photos may still fail.
+- The API token is bundled into the app, which is fine for learning and testing. For a real release, call the API through your own backend.
+- The free trial of Plate Recognizer has usage limits. Check your dashboard for details.
+
+## Common Problems
+
+| Problem | Fix |
+|---|---|
+| "Missing API token" | Check the `.env` name and location, then restart with `npx expo start -c` |
+| Camera is black | Test on a real device and make sure camera permission is allowed |
+| Module not found | Run `npm install`, then restart with `npx expo start -c` |
+| Pinch zoom does nothing | Make sure the app is wrapped in `GestureHandlerRootView` in `app/_layout.tsx` |
